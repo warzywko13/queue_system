@@ -27,11 +27,7 @@ class MonitorCoastersService extends BaseService
             CLI::write(lang('MonitorCoasters.time', ['date' =>  date('H:i')]));
 
             if (empty($keys)) {
-                $error_msg = lang('MonitorCoasters.no_coaster');
-                $this->logger->warning($error_msg);
-                CLI::write('');
-                CLI::write($error_msg);
-
+                $this->logNoCoaster();
                 $this->redis->endConnection();
                 return;
             }
@@ -52,15 +48,15 @@ class MonitorCoastersService extends BaseService
             $coasterId = str_replace('coaster:', '', $key);
             $coaster = new CoasterDTO(array_merge(['id' => (int) $coasterId], json_decode($coasterData, true)));
             
-            return $this->processWagons($coasterId, $coaster);
+            return $this->processWagons($coaster);
         });
     }
 
-    private function processWagons(string $coasterId, CoasterDTO $coaster): PromiseInterface
+    private function processWagons(CoasterDTO $coaster): PromiseInterface
     {
-        return $this->redis->client->keys("wagon$coasterId:*")->then(function ($wagonKeys) use ($coaster) {
+        return $this->redis->client->keys("wagon{$coaster->id}:*")->then(function ($wagonKeys) use ($coaster) {
             if(empty($wagonKeys)) {
-                return $this->displayEmptyWagons($coaster);
+                return $this->LogNoWagons($coaster);
             }
             
             $wagonPromises = array_map(fn($wagonKey) => $this->redis->client->get($wagonKey), $wagonKeys);
@@ -95,16 +91,6 @@ class MonitorCoastersService extends BaseService
         return $coaster;
     }
 
-    private function displayEmptyWagons(CoasterDTO $coaster): void
-    {
-        CLI::write('');
-        CLI::write(lang('MonitorCoasters.coaster', ['id' => $coaster->id]));
-
-        $message = lang('MonitorCoasters.issue',['message' => lang('MonitorCoasters.no_wagons')]);
-        CLI::write($message);
-        $this->logError($coaster->id, $message);
-    }
-
     private function displayStatus(CoasterDTO $coaster): void
     {
         CLI::write('');
@@ -135,17 +121,33 @@ class MonitorCoastersService extends BaseService
         if(empty($errors)) {
             CLI::write(lang('MonitorCoasters.status', ['status' => 'OK']));
         } else {
-            $message = lang('MonitorCoasters.issue',['message' => implode(", ", $errors) . '.']);
-            CLI::write($message);
-
+            $message = implode(", ", $errors) . '.';
             $this->logError($coaster->id, $message);
         }
     }
 
-    private function logError(int $coaster_id, string $message)
+    private function LogNoWagons(CoasterDTO $coaster): void
     {
-        $coaster = lang('MonitorCoasters.coaster_id', ['id' => $coaster_id]) . ' - ';
+        CLI::write('');
+        CLI::write(lang('MonitorCoasters.coaster', ['id' => $coaster->id]));
 
+        $this->logError($coaster->id, lang('MonitorCoasters.no_wagons'));
+    }
+
+    private function logNoCoaster(): void
+    {
+        $error_msg = lang('MonitorCoasters.no_coaster');
+        $this->logger->warning($error_msg);
+        CLI::write('');
+        CLI::write($error_msg);
+    }
+
+    private function logError(int $coaster_id, string $message): void
+    {
+        $message = lang('MonitorCoasters.issue', ['message' => $message]);
+        CLI::write($message);
+
+        $coaster = lang('MonitorCoasters.coaster_id', ['id' => $coaster_id]) . ' - ';
         $this->logger->warning(
             $coaster . $message
         );

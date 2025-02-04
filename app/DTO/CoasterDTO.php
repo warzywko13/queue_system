@@ -23,14 +23,20 @@ class CoasterDTO
         $this->staffCount = $data['staff_count'] ?? 0;
         $this->customerCount = $data['customer_count'] ?? 0;
         $this->trackLength = $data['track_length'] ?? 0;
-        $this->hoursFrom = $data['hours_from'] ?? '00:00';
-        $this->hoursTo = $data['hours_to'] ?? '00:00';
+        $this->hoursFrom = $data['hours_from'] ? self::setHourFormat($data['hours_from'])  : '00:00';
+        $this->hoursTo = $data['hours_to'] ? self::setHourFormat($data['hours_to']) : '00:00';
         $this->dayTime = self::calculateMinutesDiff($this->hoursFrom, $this->hoursTo);
         $this->staff = $data['staff_count'] ?? 0;
         $this->wagonSettings = (object) [
             'seat_count' => 0,
             'speed' => 1
         ];
+    }
+
+    private static function setHourFormat(string $hour): string
+    {
+        $date = new \DateTime($hour);
+        return $date->format('H:i');
     }
 
     private static function calculateMinutesDiff(string $hoursFrom, string $hoursTo): int
