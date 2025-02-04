@@ -29,7 +29,7 @@ class MonitorCoasters extends BaseCommand
 
         $loop = Loop::get();
 
-        $loop->addPeriodicTimer( 5, function () {
+        $loop->addPeriodicTimer( 60, function () {
             (new MonitorCoastersService)->monitor();
         });
         
