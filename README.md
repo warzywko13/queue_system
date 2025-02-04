@@ -1,13 +1,28 @@
 # Aplikacja monitorowania kolejki górskiej
 
-## 1. Uruchomienie monitora
+## 1. Konfiguracja środowiska
+Należy utworzyć plik .env
+
+W pliku tym należy ustawić środowisko:
+
+- Produkcyjne:
+```
+CI_ENVIRONMENT = production
+```
+
+- Developerskie:
+```
+CI_ENVIRONMENT = development
+```
+
+## 2. Uruchomienie monitora
 W terminalu należy uruchmić polecenie:
 
 ```
 php spark app:monitor_coasters
 ```
 
-## 2. API
+## 3. API
 
 ### Dodawanie kolejek
 
